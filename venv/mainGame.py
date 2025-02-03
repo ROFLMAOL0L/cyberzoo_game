@@ -18,7 +18,7 @@ def mainGame():
 
     # Main hero sprites
     main_hero_group = pygame.sprite.Group()
-    main_hero = MainHero()
+    main_hero = MainHero(main_hero_group)
     main_hero_group.add(main_hero)
 
     RUNNING = True

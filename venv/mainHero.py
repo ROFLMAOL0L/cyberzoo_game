@@ -1,76 +1,102 @@
-from pygame.sprite import Sprite
+from entity import Entity
 from pygame.image import load
-class MainHero(Sprite):
+from pygame.time import get_ticks
+class MainHero(Entity):
     def __init__(self):
         super().__init__()
 
         # Attributes for animation and sprites
         self.stand_sprites = []
-        self.stand_sprites.append(load("../sources/sprites/entities/main_hero/main_hero_left_128.png"))
-        self.stand_sprites.append(load("../sources/sprites/entities/main_hero/main_hero_right_128.png"))
+        self.stand_sprites.append(load("../sources/sprites/entities/main_hero/main_hero_stand_left_1.png"))
+        self.stand_sprites.append(load("../sources/sprites/entities/main_hero/main_hero_stand_right_1.png"))
         self.run_left_sprites = []
         self.run_left_sprites.append(load("../sources/sprites/entities/main_hero/main_hero_run_left_1.png"))
         self.run_left_sprites.append(load("../sources/sprites/entities/main_hero/main_hero_run_left_2.png"))
+        self.run_left_sprites.append(load("../sources/sprites/entities/main_hero/main_hero_run_left_3.png"))
+        self.run_left_sprites.append(load("../sources/sprites/entities/main_hero/main_hero_run_left_4.png"))
+        self.run_left_sprites.append(load("../sources/sprites/entities/main_hero/main_hero_run_left_5.png"))
+        self.run_left_sprites.append(load("../sources/sprites/entities/main_hero/main_hero_run_left_6.png"))
         self.run_right_sprites = []
         self.run_right_sprites.append(load("../sources/sprites/entities/main_hero/main_hero_run_right_1.png"))
         self.run_right_sprites.append(load("../sources/sprites/entities/main_hero/main_hero_run_right_2.png"))
+        self.run_right_sprites.append(load("../sources/sprites/entities/main_hero/main_hero_run_right_3.png"))
+        self.run_right_sprites.append(load("../sources/sprites/entities/main_hero/main_hero_run_right_4.png"))
+        self.run_right_sprites.append(load("../sources/sprites/entities/main_hero/main_hero_run_right_5.png"))
+        self.run_right_sprites.append(load("../sources/sprites/entities/main_hero/main_hero_run_right_6.png"))
+        self.jump_right_sprites = []
+        self.jump_right_sprites.append(load("../sources/sprites/entities/main_hero/main_hero_jump_right_1.png"))
+        self.jump_right_sprites.append(load("../sources/sprites/entities/main_hero/main_hero_jump_right_2.png"))
+        self.jump_left_sprites = []
+        self.jump_left_sprites.append(load("../sources/sprites/entities/main_hero/main_hero_jump_left_1.png"))
+        self.jump_left_sprites.append(load("../sources/sprites/entities/main_hero/main_hero_jump_left_2.png"))
         self.image = self.stand_sprites[0]
         self.rect = self.image.get_rect()
         self.rect.center = (1280 // 2, 720 // 2)
-        self.animation_frame = 0
-        self.animation_frame_max = 60
+        self.run_animation_frame = 0
+        self.max_run_animation_frame = 5
         self.next_stand_animation = self.image
+        self.last_animation_tick = get_ticks()
 
-        # Attributes for movement
-        self.acceleration_x = 2.0
-        self.decceleration_x = 1.0
-        self.acceleration_y = 1.5
-        self.decceleration_y = 0.66
-        self.momentum_x = 0.0
-        self.momentum_y = 0.0
-        self.max_momentum = 8.0
-        self.moving_up = False
-        self.moving_left = False
-        self.moving_down = False
-        self.moving_right = False
-
-    def handle_momentum(self):
-        if self.moving_up:
-            self.momentum_y = max(self.momentum_y - self.acceleration_y, -self.max_momentum)
-        if self.moving_down:
-            self.momentum_y = min(self.momentum_y + self.acceleration_y, self.max_momentum)
-        if self.moving_left:
-            self.momentum_x = max(self.momentum_x - self.acceleration_x, -self.max_momentum)
-        if self.moving_right:
-            self.momentum_x = min(self.momentum_x + self.acceleration_x, self.max_momentum)
-        if self.moving_down == self.moving_up:
-            if self.momentum_y > 0:
-                self.momentum_y = max(self.momentum_y - self.decceleration_y, 0)
-            elif self.momentum_y < 0:
-                self.momentum_y = min(self.momentum_y + self.decceleration_y, 0)
-        if self.moving_left == self.moving_right:
-            if self.momentum_x > 0:
-                self.momentum_x = max(self.momentum_x - self.decceleration_x, 0)
-            elif self.momentum_x < 0:
-                self.momentum_x = min(self.momentum_x + self.decceleration_x, 0)
+        self.is_in_jump = False
+        self.jump_momentum = 0.0
+        self.jump_acceleration = 1.0
+        self.jump_starting_momentum = 20.0
 
     def update(self):
-        self.handle_momentum()
-        self.rect.center = (self.rect.center[0] + self.momentum_x,
-                            self.rect.center[1] + self.momentum_y)
-        if (self.moving_left):
-            self.image = self.run_left_sprites[round(self.animation_frame / self.animation_frame_max)]
-            self.next_stand_animation = self.stand_sprites[0]
-        elif (self.moving_right):
-            self.image = self.run_right_sprites[round(self.animation_frame / self.animation_frame_max)]
-            self.next_stand_animation = self.stand_sprites[1]
+        # Handle momentum according to the keys pressed
+        self.handle_controls()
+        # Change the position according to momentum
+        self.rect_update()
+        # Animate
+        self.handle_animation()
+
+    def handle_controls(self):
+        # Handle jump if jumped
+        if self.is_in_jump:
+            self.handle_jump()
         else:
-            if self.momentum_y == 0 and self.momentum_y == 0:
+            self.handle_momentum()
+
+    def handle_jump(self):
+        # Apply gravity
+        if self.jump_momentum - self.jump_acceleration > 0:
+            self.jump_momentum -= self.jump_acceleration
+        # Apply 1.5 gravity if falling
+        elif self.jump_momentum - self.jump_acceleration > -self.jump_starting_momentum:
+            self.jump_momentum -= self.jump_acceleration * 1.5
+        else:
+            self.jump_momentum = 0.0
+            self.jump_end()
+        # Add it to animation addition
+        self.additional_animation_pos = (self.additional_animation_pos[0], -self.jump_momentum)
+
+    def handle_animation(self):
+        if self.is_in_jump:
+            if self.moving_left and self.jump_momentum >= 0:
+                self.image = self.jump_left_sprites[0]
+            elif self.moving_left and self.jump_momentum < 0:
+                self.image = self.jump_left_sprites[1]
+            elif self.moving_right and self.jump_momentum >= 0:
+                self.image = self.jump_right_sprites[0]
+            elif self.moving_right and self.jump_momentum < 0:
+                self.image = self.jump_right_sprites[1]
+        elif (self.moving_left):
+            self.image = self.run_left_sprites[self.run_animation_frame]
+        elif (self.moving_right):
+            self.image = self.run_right_sprites[self.run_animation_frame]
+        else:
+            if self.momentum_y == 0 and self.momentum_x == 0:
                 self.image = self.next_stand_animation
-        self.animation_frame = (self.animation_frame + 2) % self.animation_frame_max
-
-
-
+                self.animation_frame = 0
+        if self.moving_left:
+            self.next_stand_animation = self.stand_sprites[0]
+        elif self.moving_right:
+            self.next_stand_animation = self.stand_sprites[1]
+        # Move through anomation frames
+        current_ticks = get_ticks()
+        if current_ticks - 100 > self.last_animation_tick:
+            self.run_animation_frame = (self.run_animation_frame + 1) % self.max_run_animation_frame
+            self.last_animation_tick = current_ticks
 
     def move_up(self):
         self.moving_up = True
@@ -96,3 +122,11 @@ class MainHero(Sprite):
 
     def move_stop_right(self):
         self.moving_right = False
+
+    def jump(self):
+        if not self.is_in_jump:
+            self.is_in_jump = True
+            self.jump_momentum = self.jump_starting_momentum
+
+    def jump_end(self):
+        self.is_in_jump = False

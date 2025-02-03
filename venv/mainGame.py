@@ -13,7 +13,6 @@ def mainGameInit():
     screen = pygame.display.set_mode((screen_settings.width, screen_settings.height))
     screen_clock = pygame.time.Clock()
 
-
 def mainGame():
     background = pygame.image.load("../sources/sprites/background/street_bg_1.jpg")
 

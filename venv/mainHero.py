@@ -15,6 +15,7 @@ class MainHero(Entity):
         self.stand_sprites = [(0, 0), (0, 1)]
         self.run_left_sprites = [(0, 2), (0, 3), (0, 4), (0, 5), (1, 0), (1, 1)]
         self.run_right_sprites = [(1, 2), (1, 3), (1, 4), (1, 5), (2, 0), (2, 1)]
+        self.run_up_sprites = [(3,0), (3, 1), (3, 2), (3, 3), (3,0), (3, 2)]
         self.jump_left_sprites = [(2, 2), (2, 3)]
         self.jump_right_sprites = [(2, 4), (2, 5)]
         self.attack_left_sprites = [(0, 0), (0, 1), (0, 1)]
@@ -28,7 +29,7 @@ class MainHero(Entity):
         self.max_run_animation_frame = 5
         self.next_stand_animation = self.stand_sprites[0]
         self.last_animation_tick = get_ticks()
-        self.face_direction = 0   # 0 - left, 1 - right
+        self.face_direction = 0   # 0 - left, 1 - right, 2 - up
 
         self.is_in_jump = False
         self.jump_momentum = 0.0
@@ -74,13 +75,18 @@ class MainHero(Entity):
         # Handle jump if jumped
         if self.is_in_jump:
             self.handle_jump()
+            self.apply_momentum()
         elif self.is_in_attack:
             self.handle_attack()
+            self.apply_friction_x()
+            self.apply_friction_y()
         else:
-            # This function changes momentum accroding to the keys pressed
             self.apply_acceleration()
-        # This function changes the position according to momentum and applies decceleration
-        self.handle_momentum()
+            self.apply_momentum()
+            if (self.moving_down == self.moving_up):
+                self.apply_friction_y()
+            if(self.moving_left == self.moving_right):
+                self.apply_friction_x()
 
     def handle_jump(self):
         # Apply gravity
@@ -123,6 +129,10 @@ class MainHero(Entity):
             self.set_sprite_128(self.run_right_sprites[self.run_animation_frame])
             self.next_stand_animation = self.stand_sprites[1]
             self.face_direction = 1
+        elif (self.moving_up):
+            self.set_sprite_128(self.run_up_sprites[self.run_animation_frame])
+            self.next_stand_animation = self.stand_sprites[0]
+            self.face_direction = 2
         else:
             if self.momentum_y == 0 and self.momentum_x == 0:
                 self.set_sprite_128(self.next_stand_animation)
@@ -151,6 +161,7 @@ class MainHero(Entity):
 
     def move_up(self):
         self.moving_up = True
+
     def move_left(self):
         self.run_animation_frame = 0
         self.moving_left = True
@@ -174,11 +185,6 @@ class MainHero(Entity):
     def move_stop_right(self):
         self.moving_right = False
 
-    def move_stop(self):
-        self.moving_up = False
-        self.moving_left = False
-        self.moving_down = False
-        self.moving_right = False
 
     def jump(self):
         if not self.is_in_jump:
@@ -191,7 +197,6 @@ class MainHero(Entity):
     def attack(self):
         if self.is_in_attack:
             return
-        self.move_stop()
         self.is_in_attack = True
         self.attack_animation_frame = 0
         self.additional_animation_pos = (self.additional_animation_pos[0] - 128,

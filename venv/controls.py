@@ -1,4 +1,5 @@
 from pygame import KEYDOWN, KEYUP, K_w, K_a, K_s, K_d, K_SPACE, MOUSEBUTTONDOWN
+from pygame.mouse import get_pressed, get_pos
 
 def handle_controls(event, main_hero):   # how the f*ck does it even work????
     if event.type == KEYDOWN:
@@ -22,4 +23,8 @@ def handle_controls(event, main_hero):   # how the f*ck does it even work????
         if event.key == K_d:
             main_hero.move_stop_right()
     if event.type == MOUSEBUTTONDOWN:
-        main_hero.attack()
+        mouse_pressed = get_pressed()
+        if mouse_pressed[0]:
+            main_hero.attack()
+        elif mouse_pressed[2]:
+            main_hero.dash(get_pos())

@@ -1,17 +1,18 @@
 import pygame
 from screenSettings import ScreenSettings
-from controls import handle_controls
+from controls import Controls
 from mainHero import MainHero
 
-global screen, screen_settings, screen_clock
+global screen, screen_settings, screen_clock, controls
 
 def mainGameInit():
-    global screen, screen_settings, screen_clock
+    global screen, screen_settings, screen_clock, controls
     pygame.init()
     screen_settings = ScreenSettings()
     pygame.display.set_caption("CyberZoo")
     screen = pygame.display.set_mode((screen_settings.width, screen_settings.height))
     screen_clock = pygame.time.Clock()
+    controls = Controls(pygame.event.get())
 
 def mainGame():
     background = pygame.image.load("../sources/sprites/background/street_bg_1.jpg")
@@ -27,7 +28,7 @@ def mainGame():
             if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
                 pygame.quit()
                 quit()
-            handle_controls(event, main_hero)
+            controls.handle_controls(event, main_hero)
 
 
         screen.blit(background, (0,0))

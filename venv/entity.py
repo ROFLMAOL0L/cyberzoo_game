@@ -57,5 +57,8 @@ class Entity(Sprite):
         if self.moving_right:
             self.momentum_x = min(self.momentum_x + self.acceleration, self.max_momentum)
 
+    def move(self, dx, dy):
+        self.pos = (self.pos[0] + dx, self.pos[1] + dy)
+
     def axis_adjustment(self, momentum_y):
         return momentum_y * 0.5

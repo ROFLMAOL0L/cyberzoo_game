@@ -63,6 +63,12 @@ class MainHero(Entity):
                                       ]
         self.main_hero_group = main_hero_group
 
+        self.is_in_dash = False
+        self.dash_speed = 50.0
+        self.dash_momentum = 0.0
+        self.dash_decceleration = 5.0
+        self.dash_direction = (0, 0);
+
     def update(self):
         # Handle momentum according to the keys pressed
         self.handle_controls()
@@ -72,8 +78,9 @@ class MainHero(Entity):
         self.handle_animation()
 
     def handle_controls(self):
-        # Handle jump if jumped
-        if self.is_in_jump:
+        if self.is_in_dash:
+            self.handle_dash()
+        elif self.is_in_jump:
             self.handle_jump()
             self.apply_momentum()
         elif self.is_in_attack:
@@ -105,6 +112,13 @@ class MainHero(Entity):
 
     def handle_attack(self):
         pass
+
+    def handle_dash(self):
+        if self.dash_momentum - self.dash_decceleration > 0.0:
+            self.move(self.dash_direction[0] * self.dash_momentum, self.dash_direction[1] * self.dash_momentum)
+            self.dash_momentum -= self.dash_decceleration
+        else:
+            self.dash_stop()
 
     def handle_animation(self):
         if self.is_in_jump:
@@ -212,3 +226,20 @@ class MainHero(Entity):
             self.is_in_attack = False
             self.additional_animation_pos = (self.additional_animation_pos[0] + 128,
                                              self.additional_animation_pos[1] + 256)
+
+    def dash_start(self):
+        if not (self.is_in_attack or self.is_in_jump):
+            self.is_in_dash = True
+            self.dash_direction = (0, 0)
+            if self.moving_up:
+                self.dash_direction = (self.dash_direction[0], self.dash_direction[1] - 1)
+            if self.moving_down:
+                self.dash_direction = (self.dash_direction[0], self.dash_direction[1] + 1)
+            if self.moving_left:
+                self.dash_direction = (self.dash_direction[0] - 1, self.dash_direction[1])
+            if self.moving_right:
+                self.dash_direction = (self.dash_direction[0] + 1, self.dash_direction[1])
+            self.dash_momentum = self.dash_speed
+
+    def dash_stop(self):
+        self.is_in_dash = False

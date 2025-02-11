@@ -22,18 +22,30 @@ def mainGame():
     main_hero = MainHero(main_hero_group)
     main_hero_group.add(main_hero)
 
+    SHOW_VECTORS = False
+
     RUNNING = True
     while RUNNING:
         for event in pygame.event.get():
             if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
                 pygame.quit()
                 quit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_F5:
+                    SHOW_VECTORS = not SHOW_VECTORS
             controls.handle_controls(event, main_hero)
 
 
         screen.blit(background, (0,0))
         main_hero_group.update()
         main_hero_group.draw(screen)
+        if SHOW_VECTORS:
+            pygame.draw.line(screen, (255, 255, 0), main_hero.pos,
+                             (main_hero.pos[0] + main_hero.momentum[0] * 100, main_hero.pos[1]))
+            pygame.draw.line(screen, (255, 0, 255), main_hero.pos,
+                             (main_hero.pos[0], main_hero.pos[1] + main_hero.momentum[1] * 100))
+            pygame.draw.line(screen, (255, 0, 0), main_hero.pos, (main_hero.pos[0] + main_hero.momentum[0] * 100,
+                                                              main_hero.pos[1] + main_hero.momentum[1] * 100))
 
         pygame.display.flip()
         screen_clock.tick(screen_settings.fps)

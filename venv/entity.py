@@ -1,13 +1,16 @@
 from pygame.sprite import Sprite
+from lowLevelUtilities import vector_value
 class Entity(Sprite):
     def __init__(self):
         super().__init__()
         # Default attributes for all entities
         self.pos = (0, 0)
-        self.acceleration = 2.0
-        self.decceleration = 2.0
-        self.momentum_x, self.momentum_y = 0.0, 0.0
-        self.max_momentum = 8.0
+        self.momentum = (0.0, 0.0)
+        self.max_momentum_value = 1.2
+        self.acceleration = 0.2
+        self.decceleration = self.acceleration * 1.5
+        self.momentum_multiplier = 8.0
+        self.is_joystic_controlled = False
         # Used for animation purposes only
         self.additional_animation_pos = (0.0, 0.0)
 
@@ -16,29 +19,25 @@ class Entity(Sprite):
         self.moving_down = False
         self.moving_right = False
 
-    def update(self):
-        self.handle_momentum()
-        self.rect_update()
-
     def rect_update(self):
-        self.rect.center = (self.pos[0] + self.momentum_x + self.additional_animation_pos[0],
-                            self.pos[1] + self.axis_adjustment(self.momentum_y + self.additional_animation_pos[1]))
+        self.rect.center = (self.pos[0] + self.additional_animation_pos[0],
+                            self.pos[1] + self.additional_animation_pos[1])
 
     def apply_friction_y(self):
-        # friction
-        if self.momentum_y > 0:
-            self.momentum_y = max(self.momentum_y - self.decceleration, 0)
-        elif self.momentum_y < 0:
-            self.momentum_y = min(self.momentum_y + self.decceleration, 0)
+        if self.momentum[1] > 0:
+            self.momentum = (self.momentum[0], max(self.momentum[1] - self.decceleration, 0.0))
+        elif self.momentum[1] < 0:
+            self.momentum = (self.momentum[0], min(self.momentum[1] + self.decceleration, 0.0))
 
     def apply_friction_x(self):
-        if self.momentum_x > 0:
-            self.momentum_x = max(self.momentum_x - self.decceleration, 0)
-        elif self.momentum_x < 0:
-            self.momentum_x = min(self.momentum_x + self.decceleration, 0)
+        if self.momentum[0] > 0:
+            self.momentum = (max(self.momentum[0] - self.decceleration, 0.0), self.momentum[1])
+        elif self.momentum[0] < 0:
+            self.momentum = (min(self.momentum[0] + self.decceleration, 0.0), self.momentum[1])
 
     def apply_momentum(self):
-        self.pos = (self.pos[0] + self.momentum_x, self.pos[1] + self.momentum_y)
+        self.pos = (self.pos[0] + self.momentum[0] * self.momentum_multiplier,
+                    self.pos[1] + self.axis_adjustment(self.momentum[1] * self.momentum_multiplier))
 
     """
     The reason for getting those lines out of "handle_momentum()" is because the acceleration litteraly means an entity
@@ -47,18 +46,28 @@ class Entity(Sprite):
     decceleration effects have to continue, otherwise hitting attack while running will instantly make the player stop.
     """
     def apply_acceleration(self):
-        # Add momentum since button is pressed
-        if self.moving_up:
-            self.momentum_y = max(self.momentum_y - self.acceleration, -self.max_momentum)
-        if self.moving_down:
-            self.momentum_y = min(self.momentum_y + self.acceleration, self.max_momentum)
-        if self.moving_left:
-            self.momentum_x = max(self.momentum_x - self.acceleration, -self.max_momentum)
-        if self.moving_right:
-            self.momentum_x = min(self.momentum_x + self.acceleration, self.max_momentum)
+        if self.is_joystic_controlled:
+            pass
+        else:
+            # Add momentum since button is pressed
+            if self.moving_up:
+                self.momentum = (self.momentum[0], self.momentum[1] - self.acceleration)
+            if self.moving_down:
+                self.momentum = (self.momentum[0], self.momentum[1] + self.acceleration)
+            if self.moving_left:
+                self.momentum = (self.momentum[0] - self.acceleration, self.momentum[1])
+            if self.moving_right:
+                self.momentum = (self.momentum[0] + self.acceleration, self.momentum[1])
+            self.cut_momentum()
+
+    def cut_momentum(self):
+        vv = vector_value(self.momentum)
+        if vv > self.max_momentum_value:
+            delta = self.max_momentum_value / vv
+            self.momentum = (self.momentum[0] * delta, self.momentum[1] * delta)
 
     def move(self, dx, dy):
         self.pos = (self.pos[0] + dx, self.pos[1] + dy)
 
     def axis_adjustment(self, momentum_y):
-        return momentum_y * 0.5
+        return momentum_y * 1.0

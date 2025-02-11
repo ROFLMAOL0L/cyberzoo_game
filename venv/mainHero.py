@@ -92,7 +92,7 @@ class MainHero(Entity):
             self.apply_momentum()
             if (self.moving_down == self.moving_up):
                 self.apply_friction_y()
-            if(self.moving_left == self.moving_right):
+            if (self.moving_left == self.moving_right):
                 self.apply_friction_x()
 
     def handle_jump(self):
@@ -148,7 +148,7 @@ class MainHero(Entity):
             self.next_stand_animation = self.stand_sprites[0]
             self.face_direction = 2
         else:
-            if self.momentum_y == 0 and self.momentum_x == 0:
+            if self.momentum[1] == 0 and self.momentum[0] == 0:
                 self.set_sprite_128(self.next_stand_animation)
                 self.run_animation_frame = 0
         # Move through anomation frames
